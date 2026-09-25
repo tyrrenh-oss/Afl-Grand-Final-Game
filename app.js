@@ -71,7 +71,7 @@ function home(){
     <div class="eyebrow">2026 GRAND FINAL • GAME DAY</div>
     <h1>FROFFIES<br><span>AT DONDADS</span></h1>
     <p class="hero-tag">Six mates. One Grand Final. Every pick counts.</p>
-    <button class="start" onclick="go(1)">START GAME <span>→</span></button>
+    <button class="start" onclick="startGame()">START GAME <span>→</span></button>
    </div>
  </section>
  <section class="setup card">
@@ -145,8 +145,35 @@ function final(){
  <section class="card"><h2>Score Breakdown</h2>${r.map(x=>`<details><summary>${esc(x.name)} — ${x.pts} points</summary><p>${x.details.length?x.details.map(esc).join(" · "):"No scoring outcomes yet."}</p></details>`).join("")}</section>
  <section class="card final-actions"><button class="start dark" onclick="window.print()">PRINT / SAVE RESULTS</button><button class="reroll" onclick="resetGame()">RESET GAME</button></section>`;
 }
+function startGame(){
+  ensure();
+  S.ui.page=1;
+  save();
+  render();
+  window.scrollTo(0,0);
+}
 function go(p){S.page=p;ensureOrders();save();render();scrollTo(0,0)}
 function resetGame(){if(confirm("Reset the whole game?")){S=blank();save();render()}}
-function render(){ensureOrders();let c=S.page===0?home():S.page===1?draftPage("Norm Smith","norm","3 POINTS","Pick the Norm Smith Medal winner"):S.page===2?draftPage("Most Goals","goals","2 POINTS","Pick the player who will kick the most goals"):S.page===3?draftPage("Winning Team","winner","2 POINTS + 1","Pick the winning team, then your margin bracket"):S.page===4?quarter(0):S.page===5?quarter(1):S.page===6?quarter(2):S.page===7?quarter(3):S.page===8?outcomes():final();document.getElementById("app").innerHTML=shell(c);}
+function render(){
+  ensure();
+  const p=S.ui.page;
+  let content;
+  if(p===0){
+    content=home();
+  }else if(p===1){
+    content=category("norm","NORM SMITH","Pick the Norm Smith Medal winner","3 POINTS");
+  }else if(p===2){
+    content=category("goals","MOST GOALS","Pick the player who will kick the most goals","2 POINTS");
+  }else if(p===3){
+    content=category("winner","WINNING TEAM","Pick a winner and margin","2 + 1 POINTS");
+  }else if(p>=4 && p<=7){
+    content=quarter(p-4);
+  }else if(p===8){
+    content=outcomes();
+  }else{
+    content=finalPage();
+  }
+  document.getElementById("app").innerHTML=shell(content);
+}
 if("serviceWorker"in navigator)navigator.serviceWorker.register("./sw.js").catch(()=>{});
 render();
