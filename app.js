@@ -1,6 +1,6 @@
 const PLAYERS=["Jordan Clark", "Alex Pearce", "Oscar McDonald", "Karl Worner", "Judd McVee", "Heath Chapman", "Matthew Johnson", "Andrew Brayshaw", "Neil Erasmus", "Michael Frederick", "Murphy Reid", "Sam Switkowski", "Jye Amiss", "Josh Treacy", "Patrick Voss", "Luke Jackson", "Caleb Serong", "Shai Bolton", "Isaiah Dudley", "Mason Cox", "Hayden Young", "Corey Wagner", "Luke Ryan", "Ty Gallop", "Harris Andrews", "Ryan Lester", "Jaspa Fletcher", "Darcy Gardiner", "Dayne Zorko", "Jarrod Berry", "Hugh McCluggage", "Zac Bailey", "Charlie Cameron", "Logan Morris", "Conor McKenna", "Eric Hipwood", "Cameron Rayner", "Kai Lohmann", "Sam Draper", "Josh Dunkley", "Lachie Neale", "Oscar Allen", "Will Ashcroft", "Levi Ashcroft", "Darcy Fort", "Darcy Wilmot"];
 const TEAMS=["Brisbane","Fremantle"];
-const KEY="froffies-dondads-v1";
+const KEY="froffies-dondads-v2";
 const blank=()=>({
  names:["","","","","",""],
  picks:{
@@ -18,6 +18,17 @@ const blank=()=>({
  ui:{qStep:[0,0,0,0]}
 });
 let S=JSON.parse(localStorage.getItem(KEY)||"null")||blank();
+function repairState(){
+  const f=blank();
+  if(!S || typeof S!=="object") S=f;
+  if(!Array.isArray(S.names)||S.names.length!==6) S.names=f.names;
+  if(!S.picks||!Array.isArray(S.picks.norm)) S.picks=f.picks;
+  if(!S.orders||!Array.isArray(S.orders.q)) S.orders=f.orders;
+  if(!S.actual||!Array.isArray(S.actual.q)) S.actual=f.actual;
+  if(!S.ui||!Array.isArray(S.ui.qStep)) S.ui=f.ui;
+  if(typeof S.ui.page!=="number") S.ui.page=0;
+}
+repairState();
 const save=()=>localStorage.setItem(KEY,JSON.stringify(S));
 const esc=x=>String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const names=()=>S.names.map((x,i)=>x.trim()||`Player ${i+1}`);
@@ -55,14 +66,13 @@ function scores() {
 function leaderboard(){return `<aside class="running"><div class="running-head"><b>LIVE LEADERBOARD</b><span>Updates automatically</span></div>${scores().map((r,i)=>`<div class="run-row"><em>${i+1}</em><span>${esc(r.name)}</span><strong>${r.pts}</strong></div>`).join("")}</aside>`}
 function nav(){
  const items=["Home","Norm Smith","Most Goals","Winning Team","Q1","Q2","Q3","Q4","Outcomes","Leaderboard"];
- return `<nav class="game-nav">${items.map((x,i)=>`<button class="${S.page===i?"active":""}" onclick="go(${i})"><span>${i===0?"⌂":i===1?"🏅":i===2?"⚽":i===3?"🏆":i>=4&&i<=7?"Q"+(i-3):i===8?"✓":"🏆"}</span>${x}</button>`).join("")}</nav>`;
+ return `<nav class="game-nav">${items.map((x,i)=>`<button class="${S.ui.page===i?"active":""}" onclick="go(${i})"><span>${i===0?"⌂":i===1?"🏅":i===2?"⚽":i===3?"🏆":i>=4&&i<=7?"Q"+(i-3):i===8?"✓":"🏆"}</span>${x}</button>`).join("")}</nav>`;
 }
 function shell(content,kicker="FROFFIES AT DONDADS"){
  return `<main>
- ${S.page===0?content:`<header class="topbar"><div><div class="brand-mini">FROFFIES <span>AT DONDADS</span></div><small>${kicker}</small><h1>${["Home","Norm Smith","Most Goals","Winning Team","Quarter 1","Quarter 2","Quarter 3","Quarter 4","Outcomes","Final Leaderboard"][S.page]}</h1></div><button class="homebtn" onclick="go(0)">⌂</button></header>${nav()}${content}${S.page>0?`<div class="sticky-score" onclick="document.querySelector('.running')?.scrollIntoView({behavior:'smooth'})">🏆 ${esc(scores()[0].name)} <b>${scores()[0].pts}</b> · ${esc(scores()[1].name)} <b>${scores()[1].pts}</b> · ${esc(scores()[2].name)} <b>${scores()[2].pts}</b></div>${leaderboard()}`:""}`}
+ ${S.ui.page===0 ? content : `<header class="topbar"><div><div class="brand-mini">FROFFIES <span>AT DONDADS</span></div><small>${kicker}</small><h1>${["Home","Norm Smith","Most Goals","Winning Team","Quarter 1","Quarter 2","Quarter 3","Quarter 4","Outcomes","Final Leaderboard"][S.ui.page]}</h1></div><button class="homebtn" onclick="go(0)">⌂</button></header>${nav()}${content}${S.ui.page>0 ? `<div class="sticky-score" onclick="document.querySelector('.running')?.scrollIntoView({behavior:'smooth'})">🏆 ${esc(scores()[0].name)} <b>${scores()[0].pts}</b> · ${esc(scores()[1].name)} <b>${scores()[1].pts}</b> · ${esc(scores()[2].name)} <b>${scores()[2].pts}</b></div>${leaderboard()}` : ""}`}
  </main>`;
 }
-
 function home(){
  return `<section class="hero">
    <div class="hero-art"></div><div class="hero-overlay"></div>
@@ -145,6 +155,13 @@ function final(){
  <section class="card"><h2>Score Breakdown</h2>${r.map(x=>`<details><summary>${esc(x.name)} — ${x.pts} points</summary><p>${x.details.length?x.details.map(esc).join(" · "):"No scoring outcomes yet."}</p></details>`).join("")}</section>
  <section class="card final-actions"><button class="start dark" onclick="window.print()">PRINT / SAVE RESULTS</button><button class="reroll" onclick="resetGame()">RESET GAME</button></section>`;
 }
+
+function category(key, kicker, title, points){
+  if(key==="winner") return draftPage(title,key,points,"Pick the winning team and margin");
+  return draftPage(title,key,points,title);
+}
+function finalPage(){ return final(); }
+
 function startGame(){
   ensure();
   S.ui.page=1;
@@ -152,9 +169,10 @@ function startGame(){
   render();
   window.scrollTo(0,0);
 }
-function go(p){S.page=p;ensureOrders();save();render();scrollTo(0,0)}
+function go(p){S.ui.page=p;ensureOrders();save();render();scrollTo(0,0)}
 function resetGame(){if(confirm("Reset the whole game?")){S=blank();save();render()}}
 function render(){
+  repairState();
   ensure();
   const p=S.ui.page;
   let content;
