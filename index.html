@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#111827">
-<link rel="manifest" href="manifest.json">
+<link rel="manifest" href="manifest.json?v=4">
 <title>AFL Grand Final Draft Game</title>
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#0f172a;color:#fff}
@@ -140,10 +140,9 @@ function nextQuarter(){if(q>=4)return alert("All four quarters are complete.");q
 function scoreNorm(){
  let p=norm.value;if(!p)return alert("Select the Norm Smith medallist.");
  names.forEach(n=>{if(normPicks[n]===p)scores[n]+=3});
- // first selection stores a shared pick for simple game flow
  if(Object.keys(normPicks).length===0){
-   names.forEach((n,i)=>{normPicks[n]=p});
-   alert("Norm Smith result saved. To award individual picks, use the pick below as each player's selection is entered.");
+   names.forEach(n=>{normPicks[n]=p});
+   alert("Norm Smith result saved.");
  }
  leaderboard();
 }
@@ -165,7 +164,7 @@ function resetGame(){if(confirm("Reset the game?"))location.reload()}
 </script>
 <script>
 if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => navigator.serviceWorker.register("sw.js"));
+  window.addEventListener("load", () => navigator.serviceWorker.register("sw-v4.js"));
 }
 </script>
 </body></html>
