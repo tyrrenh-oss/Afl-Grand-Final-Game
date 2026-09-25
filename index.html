@@ -1,258 +1,143 @@
-<!doctype html>
+from pathlib import Path
+
+html = r'''<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#111827">
-<link rel="manifest" href="manifest.json">
-<title>AFL Grand Final Game</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AFL Grand Final 2026 Game</title>
 <style>
-*{box-sizing:border-box}
-:root{--bg:#0b1020;--card:rgba(17,24,39,.92);--line:#334155;--text:#f8fafc;--muted:#cbd5e1;--accent:#fbbf24;--green:#22c55e}
-body{margin:0;font-family:Arial,sans-serif;color:var(--text);background:#0b1020 url("background.jpg") center/cover fixed no-repeat;min-height:100vh}
-body:before{content:"";position:fixed;inset:0;background:linear-gradient(180deg,rgba(3,7,18,.72),rgba(3,7,18,.9));z-index:-1}
-.wrap{max-width:900px;margin:auto;padding:18px 14px 150px}
-h1{font-size:clamp(28px,7vw,48px);margin:8px 0 4px;text-align:center}
-h2{font-size:28px;margin:4px 0 8px}
-h3{margin:8px 0}
-.subtitle{text-align:center;color:#dbeafe;margin-bottom:16px}
-.card{background:var(--card);border:1px solid rgba(148,163,184,.35);border-radius:18px;padding:18px;margin:12px 0;box-shadow:0 10px 30px #0006}
-.hidden{display:none!important}
-button,select,input{font:inherit}
-button{border:0;border-radius:12px;padding:13px 16px;background:#f8fafc;color:#111827;font-weight:800;cursor:pointer;margin:5px 4px 5px 0}
-button.primary{background:var(--accent)}
-button.green{background:var(--green);color:#052e16}
-button.danger{background:#ef4444;color:white}
+body{font-family:Arial,sans-serif;background:#f4f4f4;margin:0;padding:16px;color:#222}
+.wrap{max-width:900px;margin:auto}
+.card{background:white;border-radius:12px;padding:16px;margin:12px 0;box-shadow:0 2px 8px #0001}
+h1,h2{margin:0 0 10px}.names{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+input,select,button{font-size:16px;padding:10px;border-radius:8px;border:1px solid #bbb}
+button{cursor:pointer;background:#222;color:#fff;border:0;margin:4px 0}
 button:disabled{opacity:.45;cursor:not-allowed}
-input,select{width:100%;padding:12px;border-radius:10px;border:1px solid #64748b;background:#0f172a;color:white}
-label{display:block;font-weight:700;margin:8px 0 5px}
-.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-@media(max-width:600px){.row{grid-template-columns:1fr}}
-.steps{display:flex;gap:5px;overflow:auto;padding:4px 0 10px;position:sticky;top:0;z-index:5}
-.steps button{white-space:nowrap;font-size:12px;padding:9px 11px;background:#1e293b;color:white}
-.steps button.active{background:var(--accent);color:#111827}
-.playerrow{border:1px solid #475569;border-radius:14px;padding:12px;margin:9px 0;background:#111827cc}
-.playerrow.current{border-color:var(--accent);box-shadow:0 0 0 2px #fbbf2433}
-.playerrow.locked{border-color:#22c55e}
-.badge{display:inline-block;padding:4px 8px;border-radius:999px;background:#334155;font-size:12px;margin-bottom:6px}
-.draft{font-weight:800;color:#fbbf24}
-.notice{padding:10px 12px;border-radius:10px;background:#172554;border:1px solid #3b82f6;margin:10px 0}
-.score{font-weight:900;color:#fbbf24}
-.leaderboard{position:fixed;left:0;right:0;bottom:0;background:rgba(2,6,23,.96);border-top:1px solid #475569;z-index:20;max-height:35vh;overflow:auto}
-.lb-inner{max-width:900px;margin:auto;padding:10px 14px}
-.lb-title{font-weight:900;margin-bottom:5px}
-.lb-grid{display:grid;grid-template-columns:1fr auto;gap:4px 12px;font-size:14px}
-.rank1{font-size:17px}.finalrank{font-size:18px;padding:9px 0;border-bottom:1px solid #334155}
-small,.muted{color:var(--muted)}
-.actual{border-top:1px solid #475569;margin-top:14px;padding-top:12px}
-.success{color:#86efac;font-weight:800}
-hr{border:0;border-top:1px solid #334155;margin:16px 0}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.row{border-top:1px solid #ddd;padding:10px 0}
+.muted{color:#666;font-size:14px}.pick{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.leader{font-size:18px;padding:8px 0}.gold{font-weight:bold}
+@media(max-width:650px){.names,.grid,.pick{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div id="steps" class="steps"></div>
-  <div id="app"></div>
+<div class="card">
+<h1>🏆 AFL Grand Final 2026</h1>
+<p>Private six-player Grand Final prediction game.</p>
+<div id="names" class="names"></div>
+<button id="saveNames">Save names & create draft orders</button>
 </div>
-<div id="leaderboard" class="leaderboard hidden"></div>
+
+<div id="game" style="display:none">
+<div class="card">
+<h2>Overall predictions</h2>
+<div id="overall"></div>
+</div>
+
+<div id="quarters"></div>
+
+<div class="card">
+<h2>Actual results</h2>
+<div class="grid">
+<label>Winner<select id="actualWinner"><option>Fremantle</option><option>Brisbane</option></select></label>
+<label>Margin bracket<select id="actualBracket"><option>1-9</option><option>10-19</option><option>20-29</option><option>30-39</option><option>40-49</option><option>50+</option></select></label>
+<label>Exact margin<input id="actualMargin" type="number" min="0" value="0"></label>
+<label>Norm Smith<select id="actualNorm"></select></label>
+<label>Most Goals<select id="actualGoals"></select></label>
+</div>
+<div id="actualQs"></div>
+<button id="calc">Calculate leaderboard</button>
+</div>
+
+<div class="card">
+<h2>Leaderboard</h2>
+<div id="leaderboard" class="muted">Enter names and complete predictions, then calculate results.</div>
+</div>
+</div>
+</div>
 
 <script>
-const AFL_PLAYERS = [
-"Alex Pearce","Caleb Serong","Andrew Brayshaw","Hayden Young","Luke Ryan","Jordan Clark","Nat Fyfe",
-"Sean Darcy","Matthew Johnson","Michael Frederick","Josh Treacy","Sam Switkowski","Shai Bolton","Jye Amiss",
-"Brandon Walker","Josh Draper","Brennan Cox","Tom Emmett","Karl Worner","Neil Erasmus","Jaeger O'Meara","Patrick Voss",
-"Will Ashcroft","Hugh McCluggage","Lachie Neale","Josh Dunkley","Jarrod Berry","Brandon Starcevich","Harris Andrews",
-"Jack Payne","Keidean Coleman","Dayne Zorko","Cam Rayner","Eric Hipwood","Lohmann","Zac Bailey","Oscar McInerney",
-"Conor McKenna","Darcy Gardiner","Kai Lohmann","Jaspa Fletcher","Lincoln McCarthy","Logan Morris","Henry Smith",
-"Shadeau Brain","Callum Ah Chee","Deven Robertson","Cameron Ellis-Yolmen"
-].filter((v,i,a)=>a.indexOf(v)===i);
+const players=["Andrew Brayshaw","Caleb Serong","Hayden Young","Luke Ryan","Jordan Clark","Josh Treacy","Michael Frederick","Sam Switkowski","Jye Amiss","Nat Fyfe","Sean Darcy","Oscar McDonald","Alex Pearce","Brandon Walker","Neil Erasmus","Brennan Cox","Matthew Johnson","Jaeger O'Meara","Josh Draper","Tom Emmett","Tom McDonald","Lachie Neale","Harris Andrews","Joe Daniher","Eric Hipwood","Charlie Cameron","Josh Dunkley","Dayne Zorko","Jarrod Berry","Cam Rayner","Oscar McInerney","Conor McKenna","Brandon Starcevich","Keidean Coleman","Lohmann","Kai Lohmann","Will Ashcroft","Levi Ashcroft","Jaspa Fletcher","Darcy Wilmot","Lincoln McCarthy","Jack Payne","Ryan Lester","Noah Answerth","James Flanders"];
+const qs=["Q1","Q2","Q3","Q4"]; let names=[],drafts=[],overall=[],actualQ=[];
 
-const TEAMS=["Fremantle","Brisbane"];
-const MARGINS=["1–9","10–19","20–29","30–39","40–49","50–59","60–69","70–79","80–89","90+"];
+function sel(opts){return opts.map(x=>`<option>${x}</option>`).join("")}
+function marginBracket(n){n=Math.abs(Number(n)||0); if(n<10)return"1-9";if(n<20)return"10-19";if(n<30)return"20-29";if(n<40)return"30-39";if(n<50)return"40-49";return"50+"}
 
-let state=JSON.parse(localStorage.getItem("aflGFGame")||"null")||{
-  screen:0,names:[""],q:[null,null,null,null],match:null,
-  actual:{q:[{first:"",last:"",disposals:""},{first:"",last:"",disposals:""},{first:"",last:"",disposals:""},{first:"",last:"",disposals:""}],
-          norm:"",goals:"",winner:"",margin:""},finalGenerated:false
-};
-
-function save(){localStorage.setItem("aflGFGame",JSON.stringify(state))}
+function renderNames(){
+ let h=""; for(let i=0;i<6;i++)h+=`<input id="n${i}" placeholder="Player ${i+1}">`;
+ document.getElementById("names").innerHTML=h;
+}
 function shuffle(a){a=[...a];for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
-function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
-function names(){return state.names.filter(x=>x.trim())}
-function opts(list,current=""){return list.map(x=>`<option value="${esc(x)}" ${x===current?"selected":""}>${esc(x)}</option>`).join("")}
-function selectHtml(id,list,current,disabled=false){return `<select id="${id}" ${disabled?"disabled":""}><option value="">Select…</option>${opts(list,current)}</select>`}
-function initQ(i){if(!state.q[i])state.q[i]={order:shuffle([...Array(names().length).keys()]),picks:{},locked:{},done:false}}
-function initMatch(){if(!state.match)state.match={order:shuffle([...Array(names().length).keys()]),picks:{},locked:{},done:false}}
-function setScreen(n){state.screen=n;save();render()}
-function currentTurn(obj){return obj.order.find(i=>!obj.locked[i])}
-function qPick(qi,pi,cat){return state.q[qi].picks[pi]?.[cat]||""}
-function matchPick(pi,cat){return state.match.picks[pi]?.[cat]||""}
-
-function quarterUsed(qi,cat,exceptPi){let out=[];Object.entries(state.q[qi].picks).forEach(([p,v])=>{if(+p!==exceptPi&&state.q[qi].locked[p]&&v?.[cat])out.push(v[cat])});return out}
-function matchUsed(cat,exceptPi){let out=[];Object.entries(state.match.picks).forEach(([p,v])=>{if(+p!==exceptPi&&state.match.locked[p]&&v?.[cat])out.push(v[cat])});return out}
-
-function points(){
- let pts=Array(names().length).fill(0);
- for(let q=0;q<4;q++){
-   let a=state.actual.q[q];
-   if(!a.first&&!a.last&&!a.disposals)continue;
-   Object.entries(state.q[q]?.picks||{}).forEach(([pi,p])=>{
-     if(a.first&&p.first===a.first)pts[+pi]++;
-     if(a.last&&p.last===a.last)pts[+pi]++;
-     if(a.disposals&&p.disposals===a.disposals)pts[+pi]++;
-   });
- }
- Object.entries(state.match?.picks||{}).forEach(([pi,p])=>{
-   if(state.actual.norm&&p.norm===state.actual.norm)pts[+pi]+=3;
-   if(state.actual.goals&&p.goals===state.actual.goals)pts[+pi]+=2;
-   if(state.actual.winner&&p.winner===state.actual.winner)pts[+pi]+=2;
-   if(state.actual.margin&&p.margin===state.actual.margin)pts[+pi]++;
+function makeGame(){
+ names=Array.from({length:6},(_,i)=>document.getElementById("n"+i).value.trim()||`Player ${i+1}`);
+ drafts=qs.map(()=>({order:shuffle([...Array(6).keys()]),first:Array(6).fill(""),last:Array(6).fill(""),disp:Array(6).fill("")}));
+ overall=names.map(()=>({winner:"Fremantle",bracket:"1-9",margin:0,norm:players[0],goals:players[0]}));
+ actualQ=qs.map(()=>({first:"",last:"",disp:""}));
+ document.getElementById("game").style.display="block"; renderOverall();renderQuarters();renderActualQs();
+}
+function renderOverall(){
+ let h=""; names.forEach((n,i)=>h+=`<div class="row"><b>${n}</b><div class="grid">
+<label>Winner<select data-o="${i}" data-k="winner">${sel(["Fremantle","Brisbane"])}</select></label>
+<label>Margin<select data-o="${i}" data-k="bracket">${sel(["1-9","10-19","20-29","30-39","40-49","50+"])}</select></label>
+<label>Exact margin<input type="number" min="0" data-o="${i}" data-k="margin" value="0"></label>
+<label>Norm Smith<select data-o="${i}" data-k="norm">${sel(players)}</select></label>
+<label>Most Goals<select data-o="${i}" data-k="goals">${sel(players)}</select></label></div></div>`);
+ document.getElementById("overall").innerHTML=h;
+ document.querySelectorAll("[data-o]").forEach(e=>e.addEventListener("change",()=>overall[e.dataset.o][e.dataset.k]=e.value));
+}
+function renderQuarters(){
+ let h=""; qs.forEach((q,qi)=>{
+ let d=drafts[qi];
+ h+=`<div class="card"><h2>${q} draft</h2><p class="muted">Draft order: ${d.order.map(i=>names[i]).join(" → ")}</p>
+ <button data-r="${qi}">Randomise this quarter</button><div>`;
+ d.order.forEach(i=>h+=`<div class="row"><b>${names[i]}</b><div class="pick">
+<select data-q="${qi}" data-i="${i}" data-k="first"><option value="">First goal scorer</option>${players.map(p=>`<option>${p}</option>`).join("")}</select>
+<select data-q="${qi}" data-i="${i}" data-k="last"><option value="">Last goal scorer</option>${players.map(p=>`<option>${p}</option>`).join("")}</select>
+<select data-q="${qi}" data-i="${i}" data-k="disp"><option value="">Most disposals</option>${players.map(p=>`<option>${p}</option>`).join("")}</select>
+</div></div>`);
+ h+="</div></div>";
  });
- return pts;
-}
-function leaderboard(final=false){
- let ns=names(), pts=points(), rows=ns.map((n,i)=>({n,p:pts[i],i})).sort((a,b)=>b.p-a.p||a.i-b.i);
- let html=`<div class="lb-inner"><div class="lb-title">${final?"🏆 Final Leaderboard":"📊 Running Leaderboard"}</div><div class="lb-grid">`;
- rows.forEach((r,k)=>{let rank=k===0?"🥇":k===1?"🥈":k===2?"🥉":(k+1)+".";
- html+=`<div class="${k<3?"rank1":""}">${rank} ${esc(r.n)}</div><div class="score">${r.p}</div>`});
- return html+"</div></div>";
-}
-function updateLB(){let el=document.getElementById("leaderboard");if(state.screen===0)el.classList.add("hidden");else{el.classList.remove("hidden");el.innerHTML=leaderboard(state.finalGenerated&&state.screen===6)}}
-
-function renderSteps(){
- const labels=["Players","Q1","Q2","Q3","Q4","Grand Final","Results"];
- document.getElementById("steps").innerHTML=labels.map((x,i)=>`<button class="${state.screen===i?"active":""}" onclick="setScreen(${i})" ${i>0&&names().length===0?"disabled":""}>${x}</button>`).join("");
-}
-
-function render(){
- renderSteps();
- const app=document.getElementById("app");
- if(state.screen===0)app.innerHTML=renderSetup();
- else if(state.screen>=1&&state.screen<=4)app.innerHTML=renderQuarter(state.screen-1);
- else if(state.screen===5)app.innerHTML=renderMatch();
- else app.innerHTML=renderResults();
- updateLB();
-}
-function renderSetup(){
- return `<h1>🏆 AFL GRAND FINAL GAME</h1><div class="subtitle">Set up the people playing</div>
- <div class="card"><h2>Players</h2><p class="muted">Add as many players as you want. These are the people making predictions.</p>
- <div id="nameList">${state.names.map((n,i)=>`<div class="row" style="margin:8px 0"><input value="${esc(n)}" placeholder="Player ${i+1}" oninput="state.names[${i}]=this.value;save()">${state.names.length>1?`<button class="danger" onclick="removeName(${i})">Remove</button>`:""}</div>`).join("")}</div>
- <button onclick="state.names.push('');save();render()">➕ Add Player</button>
- <hr><h3>Scoring</h3><p>Each quarter: <b>1 point</b> each for first goal, last goal and most disposals.</p><p>Grand Final: <b>Norm Smith 3</b> · <b>Most Goals 2</b> · <b>Winner 2</b> · <b>Margin 1</b>.</p>
- <button class="primary" onclick="startGame()">Start Game →</button></div>`;
-}
-function removeName(i){state.names.splice(i,1);state.q=[null,null,null,null];state.match=null;save();render()}
-function startGame(){
- if(names().length<1){alert("Add at least one player.");return}
- state.names=names();state.screen=1;state.q=[null,null,null,null];state.match=null;state.finalGenerated=false;save();render()
-}
-
-function renderQuarter(qi){
- initQ(qi);let q=state.q[qi], ns=names(), turn=currentTurn(q);
- let title=`Quarter ${qi+1} Predictions`;
- let html=`<h1>${title}</h1><div class="subtitle">Random draft order · 1 point per category</div>
- <div class="card"><div class="draft">Draft order: ${q.order.map((i,k)=>`${k+1}. ${esc(ns[i])}`).join(" → ")}</div></div>`;
- q.order.forEach((pi,k)=>{
-   let locked=!!q.locked[pi], current=turn===pi&&!locked, p=q.picks[pi]||{};
-   html+=`<div class="card playerrow ${current?"current":""} ${locked?"locked":""}">
-   <span class="badge">${locked?"🔒 Locked":current?"👉 YOUR TURN":"⏳ Waiting"}</span>
-   <h3>${k+1}. ${esc(ns[pi])}</h3>`;
-   if(locked) html+=`<p>First: <b>${esc(p.first)}</b><br>Last: <b>${esc(p.last)}</b><br>Most disposals: <b>${esc(p.disposals)}</b></p>`;
-   else if(current){
-     html+=`<label>First goal scorer</label>${selectHtml(`q${qi}_${pi}_first`,AFL_PLAYERS,p.first)}
-     <label>Last goal scorer</label>${selectHtml(`q${qi}_${pi}_last`,AFL_PLAYERS,p.last)}
-     <label>Most disposals</label>${selectHtml(`q${qi}_${pi}_disposals`,AFL_PLAYERS,p.disposals)}
-     <button class="primary" onclick="lockQPlayer(${qi},${pi})">Lock ${esc(ns[pi])}'s Picks</button>`;
-   } else html+=`<p class="muted">Waiting for ${esc(ns[turn])} to complete their picks.</p>`;
-   html+=`</div>`;
+ document.getElementById("quarters").innerHTML=h;
+ document.querySelectorAll("[data-r]").forEach(b=>b.onclick=()=>{let q=+b.dataset.r;drafts[q].order=shuffle([...Array(6).keys()]);drafts[q].first.fill("");drafts[q].last.fill("");drafts[q].disp.fill("");renderQuarters()});
+ document.querySelectorAll("[data-q]").forEach(e=>e.onchange=()=>{
+   let d=drafts[e.dataset.q],i=e.dataset.i,k=e.dataset.k,v=e.value;
+   if(v && d[k].some((x,idx)=>x===v && idx!==+i)){alert("That player has already been selected for this category in this quarter.");e.value=d[k][i]||"";return}
+   d[k][i]=v;
  });
- if(q.order.every(i=>q.locked[i])){
-   q.done=true;
-   html+=`<div class="card actual"><h2>Actual ${title}</h2><p class="muted">Enter these as the game happens. You can edit them later.</p>
-   <div class="row"><div><label>First goal scorer</label>${selectHtml(`a_first_${qi}`,AFL_PLAYERS,state.actual.q[qi].first)}</div>
-   <div><label>Last goal scorer</label>${selectHtml(`a_last_${qi}`,AFL_PLAYERS,state.actual.q[qi].last)}</div></div>
-   <label>Most disposals</label>${selectHtml(`a_disp_${qi}`,AFL_PLAYERS,state.actual.q[qi].disposals)}
-   <button class="green" onclick="saveActualQ(${qi})">Save Actual Quarter</button>
-   <button class="primary" onclick="setScreen(${qi<3?qi+2:5})">${qi<3?"Continue to Quarter "+(qi+2):"Go to Grand Final Predictions →"}</button></div>`;
- }
- return html;
 }
-function lockQPlayer(qi,pi){
- let f=document.getElementById(`q${qi}_${pi}_first`).value,l=document.getElementById(`q${qi}_${pi}_last`).value,d=document.getElementById(`q${qi}_${pi}_disposals`).value;
- if(!f||!l||!d){alert("Choose all three predictions first.");return}
- state.q[qi].picks[pi]={first:f,last:l,disposals:d};state.q[qi].locked[pi]=true;save();render()
+function renderActualQs(){
+ let h="";qs.forEach((q,qi)=>h+=`<div class="row"><b>${q}</b><div class="pick">
+<select data-a="${qi}" data-k="first"><option value="">First goal</option>${sel(players)}</select>
+<select data-a="${qi}" data-k="last"><option value="">Last goal</option>${sel(players)}</select>
+<select data-a="${qi}" data-k="disp"><option value="">Most disposals</option>${sel(players)}</select>
+</div></div>`);
+ document.getElementById("actualQs").innerHTML=h;
+ document.querySelectorAll("[data-a]").forEach(e=>e.onchange=()=>actualQ[e.dataset.a][e.dataset.k]=e.value);
 }
-function saveActualQ(qi){
- state.actual.q[qi]={first:document.getElementById(`a_first_${qi}`).value,last:document.getElementById(`a_last_${qi}`).value,disposals:document.getElementById(`a_disp_${qi}`).value};
- save();render()
-}
-
-function renderMatch(){
- initMatch();let m=state.match,ns=names(),turn=currentTurn(m);
- let html=`<h1>🏆 Grand Final Predictions</h1><div class="subtitle">Random draft order · duplicates allowed for Winner & Margin</div>
- <div class="card"><div class="draft">Draft order: ${m.order.map((i,k)=>`${k+1}. ${esc(ns[i])}`).join(" → ")}</div>
- <p class="muted">Norm Smith and Most Goals must be unique. Winner and Margin can be duplicated.</p></div>`;
- m.order.forEach((pi,k)=>{
-   let locked=!!m.locked[pi],current=turn===pi&&!locked,p=m.picks[pi]||{};
-   html+=`<div class="card playerrow ${current?"current":""} ${locked?"locked":""}">
-   <span class="badge">${locked?"🔒 Locked":current?"👉 YOUR TURN":"⏳ Waiting"}</span><h3>${k+1}. ${esc(ns[pi])}</h3>`;
-   if(locked)html+=`<p>Norm Smith: <b>${esc(p.norm)}</b><br>Most goals: <b>${esc(p.goals)}</b><br>Winner: <b>${esc(p.winner)}</b><br>Margin: <b>${esc(p.margin)}</b></p>`;
-   else if(current){
-     let nu=matchUsed("norm",pi),gu=matchUsed("goals",pi);
-     html+=`<label>Norm Smith medalist — 3 points</label>${selectHtml(`m_${pi}_norm`,AFL_PLAYERS,p.norm)}
-     <label>Most goals — 2 points</label>${selectHtml(`m_${pi}_goals`,AFL_PLAYERS,p.goals)}
-     <label>Grand Final winner — 2 points</label>${selectHtml(`m_${pi}_winner`,TEAMS,p.winner)}
-     <label>Margin — 1 point</label>${selectHtml(`m_${pi}_margin`,MARGINS,p.margin)}
-     <button class="primary" onclick="lockMatchPlayer(${pi})">Lock ${esc(ns[pi])}'s Picks</button>
-     <p class="muted">Available Norm Smith: ${AFL_PLAYERS.length-nu.length} · Available Most Goals: ${AFL_PLAYERS.length-gu.length}</p>`;
-   } else html+=`<p class="muted">Waiting for ${esc(ns[turn])} to complete their picks.</p>`;
-   html+=`</div>`;
+function score(){
+ let actualWinner=document.getElementById("actualWinner").value, actualB=document.getElementById("actualBracket").value, am=+document.getElementById("actualMargin").value||0;
+ let scores=names.map((n,i)=>{
+   let o=overall[i],s=0;
+   if(o.winner===actualWinner)s+=2;if(o.bracket===actualB)s+=1;if(+o.margin===am)s+=1;
+   if(o.norm===document.getElementById("actualNorm").value)s+=3;if(o.goals===document.getElementById("actualGoals").value)s+=2;
+   qs.forEach((q,qi)=>{let d=drafts[qi];if(d.first[i]&&d.first[i]===actualQ[qi].first)s++;if(d.last[i]&&d.last[i]===actualQ[qi].last)s++;if(d.disp[i]&&d.disp[i]===actualQ[qi].disp)s++;if(d.first[i]&&d.last[i]&&d.first[i]===actualQ[qi].first&&d.last[i]===actualQ[qi].last)s++});
+   return {n,s};
  });
- if(m.order.every(i=>m.locked[i]))html+=`<div class="card"><div class="success">All Grand Final predictions are locked.</div><button class="primary" onclick="setScreen(6)">Enter Actual Results →</button></div>`;
- return html;
+ scores.sort((a,b)=>b.s-a.s);
+ document.getElementById("leaderboard").innerHTML=scores.map((x,i)=>`<div class="leader">${["🥇","🥈","🥉"][i]||""} ${x.n}: <b>${x.s}</b> points</div>`).join("")+`<p class="muted">Maximum possible: 25 points.</p>`;
 }
-function lockMatchPlayer(pi){
- let n=document.getElementById(`m_${pi}_norm`).value,g=document.getElementById(`m_${pi}_goals`).value,w=document.getElementById(`m_${pi}_winner`).value,ma=document.getElementById(`m_${pi}_margin`).value;
- if(!n||!g||!w||!ma){alert("Choose all four predictions first.");return}
- if(matchUsed("norm",pi).includes(n)){alert("That Norm Smith player has already been selected.");return}
- if(matchUsed("goals",pi).includes(g)){alert("That Most Goals player has already been selected.");return}
- state.match.picks[pi]={norm:n,goals:g,winner:w,margin:ma};state.match.locked[pi]=true;save();render()
-}
-
-function renderResults(){
- let a=state.actual;
- return `<h1>🏁 Actual Results</h1><div class="subtitle">Enter the final game data, then generate the leaderboard.</div>
- <div class="card"><h2>Quarter Results</h2>${a.q.map((x,i)=>`<div class="actual"><h3>Quarter ${i+1}</h3>
- <div class="row"><div><label>First goal</label>${selectHtml(`r_first_${i}`,AFL_PLAYERS,x.first)}</div>
- <div><label>Last goal</label>${selectHtml(`r_last_${i}`,AFL_PLAYERS,x.last)}</div></div>
- <label>Most disposals</label>${selectHtml(`r_disp_${i}`,AFL_PLAYERS,x.disposals)}</div>`).join("")}
- <button class="green" onclick="saveResults()">Save Quarter Results</button></div>
- <div class="card"><h2>Grand Final Results</h2>
- <label>Norm Smith medalist — 3 points</label>${selectHtml("r_norm",AFL_PLAYERS,a.norm)}
- <label>Most goals — 2 points</label>${selectHtml("r_goals",AFL_PLAYERS,a.goals)}
- <label>Winner — 2 points</label>${selectHtml("r_winner",TEAMS,a.winner)}
- <label>Margin — 1 point</label>${selectHtml("r_margin",MARGINS,a.margin)}
- <button class="green" onclick="saveResults()">Save Actual Results</button>
- <button class="primary" onclick="generateFinal()">🏆 Generate Final Leaderboard</button></div>
- ${state.finalGenerated?`<div class="card"><h2>🏆 Final Leaderboard</h2>${finalBoard()}</div>`:""}`;
-}
-function saveResults(){
- for(let i=0;i<4;i++)state.actual.q[i]={first:document.getElementById(`r_first_${i}`).value,last:document.getElementById(`r_last_${i}`).value,disposals:document.getElementById(`r_disp_${i}`).value};
- state.actual.norm=document.getElementById("r_norm").value;
- state.actual.goals=document.getElementById("r_goals").value;
- state.actual.winner=document.getElementById("r_winner").value;
- state.actual.margin=document.getElementById("r_margin").value;
- save();render()
-}
-function generateFinal(){saveResults();state.finalGenerated=true;save();render()}
-function finalBoard(){
- let ns=names(),p=points(),rows=ns.map((n,i)=>({n,p:p[i],i})).sort((a,b)=>b.p-a.p||a.i-b.i);
- return rows.map((r,k)=>{ const rank = k===0 ? "🥇" : k===1 ? "🥈" : k===2 ? "🥉" : (k+1)+"."; return `<div class="finalrank">${rank} ${esc(r.n)} <span class="score" style="float:right">${r.p} pts</span></div>`; }).join("");
-}
-render();
+document.getElementById("saveNames").onclick=makeGame;
+document.getElementById("actualWinner").onchange=()=>{};
+document.getElementById("calc").onclick=score;
+document.getElementById("actualNorm").innerHTML=sel(players);
+document.getElementById("actualGoals").innerHTML=sel(players);
+renderNames();
 </script>
-<script>
-if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}))}
-</script>
-</body></html>
+</body>
+</html>'''
+
+path = Path("/mnt/data/AFL_Grand_Final_2026_Game_GitHub.html")
+path.write_text(html, encoding="utf-8")
+print(path)
