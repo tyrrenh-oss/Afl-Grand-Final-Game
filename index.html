@@ -39,7 +39,13 @@ table{width:100%;border-collapse:collapse}td,th{padding:9px 5px;border-bottom:1p
 </div>
 
 <div class="card">
-<h3>Predictions</h3>
+<h3>Grand Final Predictions</h3>
+<div class="sub">Each player gets their own Norm Smith, Most Goals, Winner and Margin prediction.</div>
+<div id="majorPredictions"></div>
+</div>
+
+<div class="card">
+<h3>Quarter Predictions</h3>
 <div id="draftArea"></div>
 </div>
 
@@ -58,21 +64,25 @@ table{width:100%;border-collapse:collapse}td,th{padding:9px 5px;border-bottom:1p
 </div>
 
 <div class="card">
-<h3>Norm Smith — 3 points</h3>
-<select id="norm"></select>
-<button onclick="scoreNorm()">Save Norm Smith Pick</button>
-</div>
+<h3>Final Grand Final Results</h3>
+<div class="sub">Enter the actual result once the game is finished.</div>
+<label>Norm Smith Medallist — 3 points</label>
+<select id="resultNorm"></select>
 
-<div class="card">
-<h3>Most Goals — 2 points</h3>
-<select id="mostGoals"></select>
-<button onclick="scoreMostGoals()">Save Most Goals Pick</button>
-</div>
+<label>Most Goals — 2 points</label>
+<select id="resultMostGoals"></select>
 
-<div class="card">
-<h3>Grand Final Winner — 2 points</h3>
-<select id="winner"><option value="">Select team</option><option>Fremantle</option><option>Brisbane</option></select>
-<button onclick="scoreWinner()">Save Winner Pick</button>
+<label>Winner — 2 points</label>
+<select id="resultWinner">
+<option value="">Select team</option>
+<option>Fremantle</option>
+<option>Brisbane</option>
+</select>
+
+<label>Winning Margin — 2 points for exact margin</label>
+<input id="resultMargin" type="number" min="0" max="200" placeholder="Enter winning margin in points">
+
+<button class="green" onclick="scoreFinalPredictions()">Score Grand Final Predictions</button>
 </div>
 
 <div class="card">
@@ -93,7 +103,7 @@ const players=[
 "Kai Lohmann","Darcy Fort","Josh Dunkley","Lachie Neale","Sam Draper","Jaspa Fletcher","Hugh McCluggage",
 "Levi Ashcroft","Conor McKenna"
 ];
-let names=[],scores={},q=1,order=[],turn=0,picks={},normPicks={},winnerPicks={},mostGoalsPicks={};
+let names=[],scores={},q=1,order=[],turn=0,picks={},majorPicks={},finalScored=false;
 
 const namesDiv=document.getElementById("names");
 for(let i=1;i<=6;i++) namesDiv.innerHTML+=`<input id="n${i}" placeholder="Player ${i}">`;
@@ -101,7 +111,49 @@ for(let i=1;i<=6;i++) namesDiv.innerHTML+=`<input id="n${i}" placeholder="Player
 function shuffle(a){return [...a].sort(()=>Math.random()-.5)}
 function startGame(){
  names=[]; for(let i=1;i<=6;i++){let n=document.getElementById("n"+i).value.trim()||"Player "+i;names.push(n)}
- scores={};names.forEach(n=>scores[n]=0);q=1;picks={};normPicks={};winnerPicks={};mostGoalsPicks={};document.getElementById("setup").classList.add("hidden");document.getElementById("game").classList.remove("hidden");newQuarter();
+ scores={};names.forEach(n=>scores[n]=0);q=1;picks={};majorPicks={};finalScored=false;
+document.getElementById("setup").classList.add("hidden");
+document.getElementById("game").classList.remove("hidden");
+renderMajorPredictions();
+newQuarter();
+}
+function playerOptions(){
+ return players.map(p=>`<option>${p}</option>`).join("");
+}
+function renderMajorPredictions(){
+ const area=document.getElementById("majorPredictions");
+ area.innerHTML="";
+ names.forEach((n,i)=>{
+   const box=document.createElement("div");
+   box.className="pick";
+   box.innerHTML=`<strong>${n}</strong>
+   <label>Norm Smith — 3 points</label>
+   <select id="mn${i}"><option value="">Select player</option>${playerOptions()}</select>
+   <label>Most Goals — 2 points</label>
+   <select id="mg${i}"><option value="">Select player</option>${playerOptions()}</select>
+   <label>Grand Final Winner — 2 points</label>
+   <select id="mw${i}"><option value="">Select team</option><option>Fremantle</option><option>Brisbane</option></select>
+   <label>Winning Margin — 2 points exact</label>
+   <input id="mm${i}" type="number" min="0" max="200" placeholder="Margin in points">
+   <button onclick="lockMajorPrediction(${i})">Lock ${n}'s Grand Final Picks</button>`;
+   area.appendChild(box);
+ });
+}
+function lockMajorPrediction(i){
+ const n=names[i];
+ const norm=document.getElementById("mn"+i).value;
+ const goals=document.getElementById("mg"+i).value;
+ const winner=document.getElementById("mw"+i).value;
+ const margin=document.getElementById("mm"+i).value;
+ if(!norm||!goals||!winner||margin==="") return alert("Choose Norm Smith, Most Goals, Winner and enter a margin.");
+ majorPicks[n]={norm,goals,winner,margin:Number(margin)};
+ document.getElementById("mn"+i).disabled=true;
+ document.getElementById("mg"+i).disabled=true;
+ document.getElementById("mw"+i).disabled=true;
+ document.getElementById("mm"+i).disabled=true;
+ const btn=document.querySelectorAll("#majorPredictions .pick button")[i];
+ btn.disabled=true;
+ btn.textContent="✓ Picks locked";
 }
 function newQuarter(){
  order=shuffle(names);turn=0;
@@ -116,9 +168,9 @@ function updateTurn(){
  document.getElementById("turn").textContent=order[turn];
  let box=document.createElement("div");box.className="pick";
  box.innerHTML=`<strong>${order[turn]}'s picks</strong>
- <label>First goal</label><select id="pf"><option value="">Select player</option>${players.map(p=>`<option>${p}</option>`).join("")}</select>
- <label>Last goal</label><select id="pl"><option value="">Select player</option>${players.map(p=>`<option>${p}</option>`).join("")}</select>
- <label>Most disposals</label><select id="pd"><option value="">Select player</option>${players.map(p=>`<option>${p}</option>`).join("")}</select>
+ <label>First goal</label><select id="pf"><option value="">Select player</option>${playerOptions()}</select>
+ <label>Last goal</label><select id="pl"><option value="">Select player</option>${playerOptions()}</select>
+ <label>Most disposals</label><select id="pd"><option value="">Select player</option>${playerOptions()}</select>
  <button onclick="savePick()">Lock ${order[turn]}'s picks</button>`;
  document.getElementById("draftArea").appendChild(box);
 }
@@ -128,34 +180,55 @@ function savePick(){
  picks[q].first[n]=f;picks[q].last[n]=l;picks[q].disposals[n]=d;
  turn++;updateTurn();
 }
-function fillResult(id){document.getElementById(id).innerHTML='<option value="">Select player</option>'+players.map(p=>`<option>${p}</option>`).join("")}
-["first","last","disposals","norm","mostGoals"].forEach(fillResult);
+function fillResult(id){document.getElementById(id).innerHTML='<option value="">Select player</option>'+playerOptions()}
+["first","last","disposals","resultNorm","resultMostGoals"].forEach(fillResult);
+
 function scoreQuarter(){
  if(turn<6)return alert("Finish all six players' picks first.");
- let f=first.value,l=last.value,d=disposals.value;if(!f||!l||!d)return alert("Enter all quarter results.");
- names.forEach(n=>{if(picks[q].first[n]===f)scores[n]++;if(picks[q].last[n]===l)scores[n]++;if(picks[q].disposals[n]===d)scores[n]++});
+ let f=first.value,l=last.value,d=disposals.value;
+ if(!f||!l||!d)return alert("Enter all quarter results.");
+ names.forEach(n=>{
+   if(picks[q].first[n]===f)scores[n]++;
+   if(picks[q].last[n]===l)scores[n]++;
+   if(picks[q].disposals[n]===d)scores[n]++;
+ });
  leaderboard();alert("Quarter "+q+" scored.");
 }
-function nextQuarter(){if(q>=4)return alert("All four quarters are complete.");q++;newQuarter();}
-function scoreNorm(){
- let p=norm.value;if(!p)return alert("Select the Norm Smith medallist.");
- names.forEach(n=>{if(normPicks[n]===p)scores[n]+=3});
- if(Object.keys(normPicks).length===0){
-   names.forEach(n=>{normPicks[n]=p});
-   alert("Norm Smith result saved.");
- }
+
+function nextQuarter(){
+ if(q>=4)return alert("All four quarters are complete.");
+ q++;newQuarter();
+}
+
+function scoreFinalPredictions(){
+ if(finalScored)return alert("Grand Final predictions have already been scored.");
+ const norm=document.getElementById("resultNorm").value;
+ const goals=document.getElementById("resultMostGoals").value;
+ const winner=document.getElementById("resultWinner").value;
+ const marginRaw=document.getElementById("resultMargin").value;
+ const margin=Number(marginRaw);
+ if(!norm||!goals||!winner||marginRaw==="") return alert("Enter all four final results.");
+
+ let locked=0;
+ names.forEach(n=>{
+   if(!majorPicks[n]) return;
+   locked++;
+   if(majorPicks[n].norm===norm)scores[n]+=3;
+   if(majorPicks[n].goals===goals)scores[n]+=2;
+   if(majorPicks[n].winner===winner)scores[n]+=2;
+   if(majorPicks[n].margin===margin)scores[n]+=2;
+ });
+ if(locked<6)return alert("All six players must lock their Grand Final predictions first.");
+ finalScored=true;
+ document.getElementById("resultNorm").disabled=true;
+ document.getElementById("resultMostGoals").disabled=true;
+ document.getElementById("resultWinner").disabled=true;
+ document.getElementById("resultMargin").disabled=true;
+ document.querySelector('button[onclick="scoreFinalPredictions()"]').disabled=true;
  leaderboard();
+ alert("Grand Final predictions scored.");
 }
-function scoreMostGoals(){
- let p=mostGoals.value;if(!p)return alert("Select the player you think will kick the most goals.");
- if(Object.keys(mostGoalsPicks).length===0){names.forEach(n=>mostGoalsPicks[n]=p);alert("Most Goals pick saved.");}
-}
-function scoreWinner(){
- let w=winner.value;if(!w)return alert("Select the winner.");
- names.forEach(n=>{if(winnerPicks[n]===w)scores[n]+=2});
- if(Object.keys(winnerPicks).length===0){names.forEach(n=>winnerPicks[n]=w);alert("Winner result saved.");}
- leaderboard();
-}
+
 function leaderboard(){
  let arr=names.map(n=>[n,scores[n]]).sort((a,b)=>b[1]-a[1]);
  document.getElementById("leaderboard").innerHTML="<table><tr><th>Player</th><th>Points</th></tr>"+arr.map(x=>`<tr><td>${x[0]}</td><td class="score">${x[1]}</td></tr>`).join("")+"</table>";
