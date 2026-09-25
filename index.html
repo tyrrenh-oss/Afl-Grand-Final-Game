@@ -1,143 +1,15 @@
-from pathlib import Path
-
-html = r'''<!doctype html>
+<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>AFL Grand Final 2026 Game</title>
-<style>
-body{font-family:Arial,sans-serif;background:#f4f4f4;margin:0;padding:16px;color:#222}
-.wrap{max-width:900px;margin:auto}
-.card{background:white;border-radius:12px;padding:16px;margin:12px 0;box-shadow:0 2px 8px #0001}
-h1,h2{margin:0 0 10px}.names{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
-input,select,button{font-size:16px;padding:10px;border-radius:8px;border:1px solid #bbb}
-button{cursor:pointer;background:#222;color:#fff;border:0;margin:4px 0}
-button:disabled{opacity:.45;cursor:not-allowed}
-.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
-.row{border-top:1px solid #ddd;padding:10px 0}
-.muted{color:#666;font-size:14px}.pick{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
-.leader{font-size:18px;padding:8px 0}.gold{font-weight:bold}
-@media(max-width:650px){.names,.grid,.pick{grid-template-columns:1fr}}
-</style>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b1320">
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="styles.css">
+<title>AFL 2026 Grand Final Game</title>
 </head>
 <body>
-<div class="wrap">
-<div class="card">
-<h1>🏆 AFL Grand Final 2026</h1>
-<p>Private six-player Grand Final prediction game.</p>
-<div id="names" class="names"></div>
-<button id="saveNames">Save names & create draft orders</button>
-</div>
-
-<div id="game" style="display:none">
-<div class="card">
-<h2>Overall predictions</h2>
-<div id="overall"></div>
-</div>
-
-<div id="quarters"></div>
-
-<div class="card">
-<h2>Actual results</h2>
-<div class="grid">
-<label>Winner<select id="actualWinner"><option>Fremantle</option><option>Brisbane</option></select></label>
-<label>Margin bracket<select id="actualBracket"><option>1-9</option><option>10-19</option><option>20-29</option><option>30-39</option><option>40-49</option><option>50+</option></select></label>
-<label>Exact margin<input id="actualMargin" type="number" min="0" value="0"></label>
-<label>Norm Smith<select id="actualNorm"></select></label>
-<label>Most Goals<select id="actualGoals"></select></label>
-</div>
-<div id="actualQs"></div>
-<button id="calc">Calculate leaderboard</button>
-</div>
-
-<div class="card">
-<h2>Leaderboard</h2>
-<div id="leaderboard" class="muted">Enter names and complete predictions, then calculate results.</div>
-</div>
-</div>
-</div>
-
-<script>
-const players=["Andrew Brayshaw","Caleb Serong","Hayden Young","Luke Ryan","Jordan Clark","Josh Treacy","Michael Frederick","Sam Switkowski","Jye Amiss","Nat Fyfe","Sean Darcy","Oscar McDonald","Alex Pearce","Brandon Walker","Neil Erasmus","Brennan Cox","Matthew Johnson","Jaeger O'Meara","Josh Draper","Tom Emmett","Tom McDonald","Lachie Neale","Harris Andrews","Joe Daniher","Eric Hipwood","Charlie Cameron","Josh Dunkley","Dayne Zorko","Jarrod Berry","Cam Rayner","Oscar McInerney","Conor McKenna","Brandon Starcevich","Keidean Coleman","Lohmann","Kai Lohmann","Will Ashcroft","Levi Ashcroft","Jaspa Fletcher","Darcy Wilmot","Lincoln McCarthy","Jack Payne","Ryan Lester","Noah Answerth","James Flanders"];
-const qs=["Q1","Q2","Q3","Q4"]; let names=[],drafts=[],overall=[],actualQ=[];
-
-function sel(opts){return opts.map(x=>`<option>${x}</option>`).join("")}
-function marginBracket(n){n=Math.abs(Number(n)||0); if(n<10)return"1-9";if(n<20)return"10-19";if(n<30)return"20-29";if(n<40)return"30-39";if(n<50)return"40-49";return"50+"}
-
-function renderNames(){
- let h=""; for(let i=0;i<6;i++)h+=`<input id="n${i}" placeholder="Player ${i+1}">`;
- document.getElementById("names").innerHTML=h;
-}
-function shuffle(a){a=[...a];for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
-function makeGame(){
- names=Array.from({length:6},(_,i)=>document.getElementById("n"+i).value.trim()||`Player ${i+1}`);
- drafts=qs.map(()=>({order:shuffle([...Array(6).keys()]),first:Array(6).fill(""),last:Array(6).fill(""),disp:Array(6).fill("")}));
- overall=names.map(()=>({winner:"Fremantle",bracket:"1-9",margin:0,norm:players[0],goals:players[0]}));
- actualQ=qs.map(()=>({first:"",last:"",disp:""}));
- document.getElementById("game").style.display="block"; renderOverall();renderQuarters();renderActualQs();
-}
-function renderOverall(){
- let h=""; names.forEach((n,i)=>h+=`<div class="row"><b>${n}</b><div class="grid">
-<label>Winner<select data-o="${i}" data-k="winner">${sel(["Fremantle","Brisbane"])}</select></label>
-<label>Margin<select data-o="${i}" data-k="bracket">${sel(["1-9","10-19","20-29","30-39","40-49","50+"])}</select></label>
-<label>Exact margin<input type="number" min="0" data-o="${i}" data-k="margin" value="0"></label>
-<label>Norm Smith<select data-o="${i}" data-k="norm">${sel(players)}</select></label>
-<label>Most Goals<select data-o="${i}" data-k="goals">${sel(players)}</select></label></div></div>`);
- document.getElementById("overall").innerHTML=h;
- document.querySelectorAll("[data-o]").forEach(e=>e.addEventListener("change",()=>overall[e.dataset.o][e.dataset.k]=e.value));
-}
-function renderQuarters(){
- let h=""; qs.forEach((q,qi)=>{
- let d=drafts[qi];
- h+=`<div class="card"><h2>${q} draft</h2><p class="muted">Draft order: ${d.order.map(i=>names[i]).join(" → ")}</p>
- <button data-r="${qi}">Randomise this quarter</button><div>`;
- d.order.forEach(i=>h+=`<div class="row"><b>${names[i]}</b><div class="pick">
-<select data-q="${qi}" data-i="${i}" data-k="first"><option value="">First goal scorer</option>${players.map(p=>`<option>${p}</option>`).join("")}</select>
-<select data-q="${qi}" data-i="${i}" data-k="last"><option value="">Last goal scorer</option>${players.map(p=>`<option>${p}</option>`).join("")}</select>
-<select data-q="${qi}" data-i="${i}" data-k="disp"><option value="">Most disposals</option>${players.map(p=>`<option>${p}</option>`).join("")}</select>
-</div></div>`);
- h+="</div></div>";
- });
- document.getElementById("quarters").innerHTML=h;
- document.querySelectorAll("[data-r]").forEach(b=>b.onclick=()=>{let q=+b.dataset.r;drafts[q].order=shuffle([...Array(6).keys()]);drafts[q].first.fill("");drafts[q].last.fill("");drafts[q].disp.fill("");renderQuarters()});
- document.querySelectorAll("[data-q]").forEach(e=>e.onchange=()=>{
-   let d=drafts[e.dataset.q],i=e.dataset.i,k=e.dataset.k,v=e.value;
-   if(v && d[k].some((x,idx)=>x===v && idx!==+i)){alert("That player has already been selected for this category in this quarter.");e.value=d[k][i]||"";return}
-   d[k][i]=v;
- });
-}
-function renderActualQs(){
- let h="";qs.forEach((q,qi)=>h+=`<div class="row"><b>${q}</b><div class="pick">
-<select data-a="${qi}" data-k="first"><option value="">First goal</option>${sel(players)}</select>
-<select data-a="${qi}" data-k="last"><option value="">Last goal</option>${sel(players)}</select>
-<select data-a="${qi}" data-k="disp"><option value="">Most disposals</option>${sel(players)}</select>
-</div></div>`);
- document.getElementById("actualQs").innerHTML=h;
- document.querySelectorAll("[data-a]").forEach(e=>e.onchange=()=>actualQ[e.dataset.a][e.dataset.k]=e.value);
-}
-function score(){
- let actualWinner=document.getElementById("actualWinner").value, actualB=document.getElementById("actualBracket").value, am=+document.getElementById("actualMargin").value||0;
- let scores=names.map((n,i)=>{
-   let o=overall[i],s=0;
-   if(o.winner===actualWinner)s+=2;if(o.bracket===actualB)s+=1;if(+o.margin===am)s+=1;
-   if(o.norm===document.getElementById("actualNorm").value)s+=3;if(o.goals===document.getElementById("actualGoals").value)s+=2;
-   qs.forEach((q,qi)=>{let d=drafts[qi];if(d.first[i]&&d.first[i]===actualQ[qi].first)s++;if(d.last[i]&&d.last[i]===actualQ[qi].last)s++;if(d.disp[i]&&d.disp[i]===actualQ[qi].disp)s++;if(d.first[i]&&d.last[i]&&d.first[i]===actualQ[qi].first&&d.last[i]===actualQ[qi].last)s++});
-   return {n,s};
- });
- scores.sort((a,b)=>b.s-a.s);
- document.getElementById("leaderboard").innerHTML=scores.map((x,i)=>`<div class="leader">${["🥇","🥈","🥉"][i]||""} ${x.n}: <b>${x.s}</b> points</div>`).join("")+`<p class="muted">Maximum possible: 25 points.</p>`;
-}
-document.getElementById("saveNames").onclick=makeGame;
-document.getElementById("actualWinner").onchange=()=>{};
-document.getElementById("calc").onclick=score;
-document.getElementById("actualNorm").innerHTML=sel(players);
-document.getElementById("actualGoals").innerHTML=sel(players);
-renderNames();
-</script>
+<div id="app"></div>
+<script src="app.js"></script>
 </body>
-</html>'''
-
-path = Path("/mnt/data/AFL_Grand_Final_2026_Game_GitHub.html")
-path.write_text(html, encoding="utf-8")
-print(path)
+</html>

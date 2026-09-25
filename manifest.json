@@ -1,14 +1,9 @@
 {
-  "name":"AFL Grand Final Game",
+  "name":"AFL 2026 Grand Final Game",
   "short_name":"AFL GF Game",
   "start_url":"./",
-  "scope":"./",
   "display":"standalone",
-  "background_color":"#0b1020",
-  "theme_color":"#111827",
-  "description":"AFL Grand Final prediction and draft game",
-  "icons":[
-    {"src":"icon-192.png","sizes":"192x192","type":"image/png"},
-    {"src":"icon-512.png","sizes":"512x512","type":"image/png"}
-  ]
+  "background_color":"#0b1320",
+  "theme_color":"#0b1320",
+  "icons":[]
 }
