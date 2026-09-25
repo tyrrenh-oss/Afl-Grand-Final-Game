@@ -1,243 +1,258 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#111827">
-<link rel="manifest" href="manifest.json?v=4">
-<title>AFL Grand Final Draft Game</title>
+<link rel="manifest" href="manifest.json">
+<title>AFL Grand Final Game</title>
 <style>
-*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#0f172a;color:#fff}
-.wrap{max-width:700px;margin:auto;padding:18px}.card{background:#1e293b;border-radius:16px;padding:18px;margin:12px 0}
-h1{font-size:25px;margin:4px 0 8px}.sub{color:#cbd5e1;font-size:14px}
-input,select,button{width:100%;padding:13px;border-radius:10px;border:0;font-size:16px;margin-top:8px}
-input{background:#fff;color:#111827}button{background:#2563eb;color:#fff;font-weight:bold}button.secondary{background:#475569}button.green{background:#16a34a}button.red{background:#dc2626}
-.hidden{display:none}.row{display:flex;gap:8px}.row>*{flex:1}.pill{display:inline-block;background:#334155;padding:6px 9px;border-radius:999px;margin:3px;font-size:13px}
-.pick{background:#334155;border-radius:12px;padding:12px;margin:8px 0}.pick strong{display:block;margin-bottom:6px}
-table{width:100%;border-collapse:collapse}td,th{padding:9px 5px;border-bottom:1px solid #475569;text-align:left}
-.score{font-size:30px;font-weight:bold}.notice{background:#172554;padding:12px;border-radius:10px;margin-top:10px}
+*{box-sizing:border-box}
+:root{--bg:#0b1020;--card:rgba(17,24,39,.92);--line:#334155;--text:#f8fafc;--muted:#cbd5e1;--accent:#fbbf24;--green:#22c55e}
+body{margin:0;font-family:Arial,sans-serif;color:var(--text);background:#0b1020 url("background.jpg") center/cover fixed no-repeat;min-height:100vh}
+body:before{content:"";position:fixed;inset:0;background:linear-gradient(180deg,rgba(3,7,18,.72),rgba(3,7,18,.9));z-index:-1}
+.wrap{max-width:900px;margin:auto;padding:18px 14px 150px}
+h1{font-size:clamp(28px,7vw,48px);margin:8px 0 4px;text-align:center}
+h2{font-size:28px;margin:4px 0 8px}
+h3{margin:8px 0}
+.subtitle{text-align:center;color:#dbeafe;margin-bottom:16px}
+.card{background:var(--card);border:1px solid rgba(148,163,184,.35);border-radius:18px;padding:18px;margin:12px 0;box-shadow:0 10px 30px #0006}
+.hidden{display:none!important}
+button,select,input{font:inherit}
+button{border:0;border-radius:12px;padding:13px 16px;background:#f8fafc;color:#111827;font-weight:800;cursor:pointer;margin:5px 4px 5px 0}
+button.primary{background:var(--accent)}
+button.green{background:var(--green);color:#052e16}
+button.danger{background:#ef4444;color:white}
+button:disabled{opacity:.45;cursor:not-allowed}
+input,select{width:100%;padding:12px;border-radius:10px;border:1px solid #64748b;background:#0f172a;color:white}
+label{display:block;font-weight:700;margin:8px 0 5px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:600px){.row{grid-template-columns:1fr}}
+.steps{display:flex;gap:5px;overflow:auto;padding:4px 0 10px;position:sticky;top:0;z-index:5}
+.steps button{white-space:nowrap;font-size:12px;padding:9px 11px;background:#1e293b;color:white}
+.steps button.active{background:var(--accent);color:#111827}
+.playerrow{border:1px solid #475569;border-radius:14px;padding:12px;margin:9px 0;background:#111827cc}
+.playerrow.current{border-color:var(--accent);box-shadow:0 0 0 2px #fbbf2433}
+.playerrow.locked{border-color:#22c55e}
+.badge{display:inline-block;padding:4px 8px;border-radius:999px;background:#334155;font-size:12px;margin-bottom:6px}
+.draft{font-weight:800;color:#fbbf24}
+.notice{padding:10px 12px;border-radius:10px;background:#172554;border:1px solid #3b82f6;margin:10px 0}
+.score{font-weight:900;color:#fbbf24}
+.leaderboard{position:fixed;left:0;right:0;bottom:0;background:rgba(2,6,23,.96);border-top:1px solid #475569;z-index:20;max-height:35vh;overflow:auto}
+.lb-inner{max-width:900px;margin:auto;padding:10px 14px}
+.lb-title{font-weight:900;margin-bottom:5px}
+.lb-grid{display:grid;grid-template-columns:1fr auto;gap:4px 12px;font-size:14px}
+.rank1{font-size:17px}.finalrank{font-size:18px;padding:9px 0;border-bottom:1px solid #334155}
+small,.muted{color:var(--muted)}
+.actual{border-top:1px solid #475569;margin-top:14px;padding-top:12px}
+.success{color:#86efac;font-weight:800}
+hr{border:0;border-top:1px solid #334155;margin:16px 0}
 </style>
 </head>
 <body>
 <div class="wrap">
-<div class="card">
-<h1>🏆 AFL Grand Final Draft Game</h1>
-<div class="sub">6-player draft • random order every quarter</div>
+  <div id="steps" class="steps"></div>
+  <div id="app"></div>
 </div>
-
-<div id="setup" class="card">
-<h2>Enter the 6 players</h2>
-<div id="names"></div>
-<button onclick="startGame()">Start Game</button>
-</div>
-
-<div id="game" class="hidden">
-<div class="card">
-<h2 id="qtitle">Quarter 1</h2>
-<div id="order"></div>
-<div class="notice">Current turn: <b id="turn"></b></div>
-</div>
-
-<div class="card">
-<h3>Grand Final Predictions</h3>
-<div class="sub">Each player gets their own Norm Smith, Most Goals, Winner and Margin prediction.</div>
-<div id="majorPredictions"></div>
-</div>
-
-<div class="card">
-<h3>Quarter Predictions</h3>
-<div id="draftArea"></div>
-</div>
-
-<div class="card">
-<h3>Leaderboard</h3>
-<div id="leaderboard"></div>
-</div>
-
-<div class="card">
-<h3>Enter results</h3>
-<label>First goal scorer</label><select id="first"></select>
-<label>Last goal scorer</label><select id="last"></select>
-<label>Most disposals</label><select id="disposals"></select>
-<button class="green" onclick="scoreQuarter()">Score Quarter</button>
-<button class="secondary" onclick="nextQuarter()">Next Quarter</button>
-</div>
-
-<div class="card">
-<h3>Final Grand Final Results</h3>
-<div class="sub">Enter the actual result once the game is finished.</div>
-<label>Norm Smith Medallist — 3 points</label>
-<select id="resultNorm"></select>
-
-<label>Most Goals — 2 points</label>
-<select id="resultMostGoals"></select>
-
-<label>Winner — 2 points</label>
-<select id="resultWinner">
-<option value="">Select team</option>
-<option>Fremantle</option>
-<option>Brisbane</option>
-</select>
-
-<label>Winning Margin — 2 points for exact margin</label>
-<input id="resultMargin" type="number" min="0" max="200" placeholder="Enter winning margin in points">
-
-<button class="green" onclick="scoreFinalPredictions()">Score Grand Final Predictions</button>
-</div>
-
-<div class="card">
-<h3>Final scores</h3>
-<button class="red" onclick="resetGame()">Reset Game</button>
-</div>
-</div>
-</div>
+<div id="leaderboard" class="leaderboard hidden"></div>
 
 <script>
-const players=[
-"Jordan Clark","Alex Pearce","Judd McVee","Karl Worner","Oscar McDonald","Heath Chapman",
-"Matthew Johnson","Andrew Brayshaw","Neil Erasmus","Michael Frederick","Murphy Reid","Sam Switkowski",
-"Jye Amiss","Josh Treacy","Patrick Voss","Luke Jackson","Caleb Serong","Shai Bolton","Isaiah Dudley",
-"Mason Cox","Hayden Young","Corey Wagner","Luke Ryan",
-"Ty Gallop","Harris Andrews","Ryan Lester","Darcy Wilmot","Darcy Gardiner","Dayne Zorko","Jarrod Berry",
-"Will Ashcroft","Zac Bailey","Charlie Cameron","Logan Morris","Oscar Allen","Eric Hipwood","Cam Rayner",
-"Kai Lohmann","Darcy Fort","Josh Dunkley","Lachie Neale","Sam Draper","Jaspa Fletcher","Hugh McCluggage",
-"Levi Ashcroft","Conor McKenna"
-];
-let names=[],scores={},q=1,order=[],turn=0,picks={},majorPicks={},finalScored=false;
+const AFL_PLAYERS = [
+"Alex Pearce","Caleb Serong","Andrew Brayshaw","Hayden Young","Luke Ryan","Jordan Clark","Nat Fyfe",
+"Sean Darcy","Matthew Johnson","Michael Frederick","Josh Treacy","Sam Switkowski","Shai Bolton","Jye Amiss",
+"Brandon Walker","Josh Draper","Brennan Cox","Tom Emmett","Karl Worner","Neil Erasmus","Jaeger O'Meara","Patrick Voss",
+"Will Ashcroft","Hugh McCluggage","Lachie Neale","Josh Dunkley","Jarrod Berry","Brandon Starcevich","Harris Andrews",
+"Jack Payne","Keidean Coleman","Dayne Zorko","Cam Rayner","Eric Hipwood","Lohmann","Zac Bailey","Oscar McInerney",
+"Conor McKenna","Darcy Gardiner","Kai Lohmann","Jaspa Fletcher","Lincoln McCarthy","Logan Morris","Henry Smith",
+"Shadeau Brain","Callum Ah Chee","Deven Robertson","Cameron Ellis-Yolmen"
+].filter((v,i,a)=>a.indexOf(v)===i);
 
-const namesDiv=document.getElementById("names");
-for(let i=1;i<=6;i++) namesDiv.innerHTML+=`<input id="n${i}" placeholder="Player ${i}">`;
+const TEAMS=["Fremantle","Brisbane"];
+const MARGINS=["1–9","10–19","20–29","30–39","40–49","50–59","60–69","70–79","80–89","90+"];
 
-function shuffle(a){return [...a].sort(()=>Math.random()-.5)}
+let state=JSON.parse(localStorage.getItem("aflGFGame")||"null")||{
+  screen:0,names:[""],q:[null,null,null,null],match:null,
+  actual:{q:[{first:"",last:"",disposals:""},{first:"",last:"",disposals:""},{first:"",last:"",disposals:""},{first:"",last:"",disposals:""}],
+          norm:"",goals:"",winner:"",margin:""},finalGenerated:false
+};
+
+function save(){localStorage.setItem("aflGFGame",JSON.stringify(state))}
+function shuffle(a){a=[...a];for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function names(){return state.names.filter(x=>x.trim())}
+function opts(list,current=""){return list.map(x=>`<option value="${esc(x)}" ${x===current?"selected":""}>${esc(x)}</option>`).join("")}
+function selectHtml(id,list,current,disabled=false){return `<select id="${id}" ${disabled?"disabled":""}><option value="">Select…</option>${opts(list,current)}</select>`}
+function initQ(i){if(!state.q[i])state.q[i]={order:shuffle([...Array(names().length).keys()]),picks:{},locked:{},done:false}}
+function initMatch(){if(!state.match)state.match={order:shuffle([...Array(names().length).keys()]),picks:{},locked:{},done:false}}
+function setScreen(n){state.screen=n;save();render()}
+function currentTurn(obj){return obj.order.find(i=>!obj.locked[i])}
+function qPick(qi,pi,cat){return state.q[qi].picks[pi]?.[cat]||""}
+function matchPick(pi,cat){return state.match.picks[pi]?.[cat]||""}
+
+function quarterUsed(qi,cat,exceptPi){let out=[];Object.entries(state.q[qi].picks).forEach(([p,v])=>{if(+p!==exceptPi&&state.q[qi].locked[p]&&v?.[cat])out.push(v[cat])});return out}
+function matchUsed(cat,exceptPi){let out=[];Object.entries(state.match.picks).forEach(([p,v])=>{if(+p!==exceptPi&&state.match.locked[p]&&v?.[cat])out.push(v[cat])});return out}
+
+function points(){
+ let pts=Array(names().length).fill(0);
+ for(let q=0;q<4;q++){
+   let a=state.actual.q[q];
+   if(!a.first&&!a.last&&!a.disposals)continue;
+   Object.entries(state.q[q]?.picks||{}).forEach(([pi,p])=>{
+     if(a.first&&p.first===a.first)pts[+pi]++;
+     if(a.last&&p.last===a.last)pts[+pi]++;
+     if(a.disposals&&p.disposals===a.disposals)pts[+pi]++;
+   });
+ }
+ Object.entries(state.match?.picks||{}).forEach(([pi,p])=>{
+   if(state.actual.norm&&p.norm===state.actual.norm)pts[+pi]+=3;
+   if(state.actual.goals&&p.goals===state.actual.goals)pts[+pi]+=2;
+   if(state.actual.winner&&p.winner===state.actual.winner)pts[+pi]+=2;
+   if(state.actual.margin&&p.margin===state.actual.margin)pts[+pi]++;
+ });
+ return pts;
+}
+function leaderboard(final=false){
+ let ns=names(), pts=points(), rows=ns.map((n,i)=>({n,p:pts[i],i})).sort((a,b)=>b.p-a.p||a.i-b.i);
+ let html=`<div class="lb-inner"><div class="lb-title">${final?"🏆 Final Leaderboard":"📊 Running Leaderboard"}</div><div class="lb-grid">`;
+ rows.forEach((r,k)=>{let rank=k===0?"🥇":k===1?"🥈":k===2?"🥉":(k+1)+".";
+ html+=`<div class="${k<3?"rank1":""}">${rank} ${esc(r.n)}</div><div class="score">${r.p}</div>`});
+ return html+"</div></div>";
+}
+function updateLB(){let el=document.getElementById("leaderboard");if(state.screen===0)el.classList.add("hidden");else{el.classList.remove("hidden");el.innerHTML=leaderboard(state.finalGenerated&&state.screen===6)}}
+
+function renderSteps(){
+ const labels=["Players","Q1","Q2","Q3","Q4","Grand Final","Results"];
+ document.getElementById("steps").innerHTML=labels.map((x,i)=>`<button class="${state.screen===i?"active":""}" onclick="setScreen(${i})" ${i>0&&names().length===0?"disabled":""}>${x}</button>`).join("");
+}
+
+function render(){
+ renderSteps();
+ const app=document.getElementById("app");
+ if(state.screen===0)app.innerHTML=renderSetup();
+ else if(state.screen>=1&&state.screen<=4)app.innerHTML=renderQuarter(state.screen-1);
+ else if(state.screen===5)app.innerHTML=renderMatch();
+ else app.innerHTML=renderResults();
+ updateLB();
+}
+function renderSetup(){
+ return `<h1>🏆 AFL GRAND FINAL GAME</h1><div class="subtitle">Set up the people playing</div>
+ <div class="card"><h2>Players</h2><p class="muted">Add as many players as you want. These are the people making predictions.</p>
+ <div id="nameList">${state.names.map((n,i)=>`<div class="row" style="margin:8px 0"><input value="${esc(n)}" placeholder="Player ${i+1}" oninput="state.names[${i}]=this.value;save()">${state.names.length>1?`<button class="danger" onclick="removeName(${i})">Remove</button>`:""}</div>`).join("")}</div>
+ <button onclick="state.names.push('');save();render()">➕ Add Player</button>
+ <hr><h3>Scoring</h3><p>Each quarter: <b>1 point</b> each for first goal, last goal and most disposals.</p><p>Grand Final: <b>Norm Smith 3</b> · <b>Most Goals 2</b> · <b>Winner 2</b> · <b>Margin 1</b>.</p>
+ <button class="primary" onclick="startGame()">Start Game →</button></div>`;
+}
+function removeName(i){state.names.splice(i,1);state.q=[null,null,null,null];state.match=null;save();render()}
 function startGame(){
- names=[]; for(let i=1;i<=6;i++){let n=document.getElementById("n"+i).value.trim()||"Player "+i;names.push(n)}
- scores={};names.forEach(n=>scores[n]=0);q=1;picks={};majorPicks={};finalScored=false;
-document.getElementById("setup").classList.add("hidden");
-document.getElementById("game").classList.remove("hidden");
-renderMajorPredictions();
-newQuarter();
+ if(names().length<1){alert("Add at least one player.");return}
+ state.names=names();state.screen=1;state.q=[null,null,null,null];state.match=null;state.finalGenerated=false;save();render()
 }
-function playerOptions(){
- return players.map(p=>`<option>${p}</option>`).join("");
-}
-function renderMajorPredictions(){
- const area=document.getElementById("majorPredictions");
- area.innerHTML="";
- names.forEach((n,i)=>{
-   const box=document.createElement("div");
-   box.className="pick";
-   box.innerHTML=`<strong>${n}</strong>
-   <label>Norm Smith — 3 points</label>
-   <select id="mn${i}"><option value="">Select player</option>${playerOptions()}</select>
-   <label>Most Goals — 2 points</label>
-   <select id="mg${i}"><option value="">Select player</option>${playerOptions()}</select>
-   <label>Grand Final Winner — 2 points</label>
-   <select id="mw${i}"><option value="">Select team</option><option>Fremantle</option><option>Brisbane</option></select>
-   <label>Winning Margin — 2 points exact</label>
-   <input id="mm${i}" type="number" min="0" max="200" placeholder="Margin in points">
-   <button onclick="lockMajorPrediction(${i})">Lock ${n}'s Grand Final Picks</button>`;
-   area.appendChild(box);
+
+function renderQuarter(qi){
+ initQ(qi);let q=state.q[qi], ns=names(), turn=currentTurn(q);
+ let title=`Quarter ${qi+1} Predictions`;
+ let html=`<h1>${title}</h1><div class="subtitle">Random draft order · 1 point per category</div>
+ <div class="card"><div class="draft">Draft order: ${q.order.map((i,k)=>`${k+1}. ${esc(ns[i])}`).join(" → ")}</div></div>`;
+ q.order.forEach((pi,k)=>{
+   let locked=!!q.locked[pi], current=turn===pi&&!locked, p=q.picks[pi]||{};
+   html+=`<div class="card playerrow ${current?"current":""} ${locked?"locked":""}">
+   <span class="badge">${locked?"🔒 Locked":current?"👉 YOUR TURN":"⏳ Waiting"}</span>
+   <h3>${k+1}. ${esc(ns[pi])}</h3>`;
+   if(locked) html+=`<p>First: <b>${esc(p.first)}</b><br>Last: <b>${esc(p.last)}</b><br>Most disposals: <b>${esc(p.disposals)}</b></p>`;
+   else if(current){
+     html+=`<label>First goal scorer</label>${selectHtml(`q${qi}_${pi}_first`,AFL_PLAYERS,p.first)}
+     <label>Last goal scorer</label>${selectHtml(`q${qi}_${pi}_last`,AFL_PLAYERS,p.last)}
+     <label>Most disposals</label>${selectHtml(`q${qi}_${pi}_disposals`,AFL_PLAYERS,p.disposals)}
+     <button class="primary" onclick="lockQPlayer(${qi},${pi})">Lock ${esc(ns[pi])}'s Picks</button>`;
+   } else html+=`<p class="muted">Waiting for ${esc(ns[turn])} to complete their picks.</p>`;
+   html+=`</div>`;
  });
+ if(q.order.every(i=>q.locked[i])){
+   q.done=true;
+   html+=`<div class="card actual"><h2>Actual ${title}</h2><p class="muted">Enter these as the game happens. You can edit them later.</p>
+   <div class="row"><div><label>First goal scorer</label>${selectHtml(`a_first_${qi}`,AFL_PLAYERS,state.actual.q[qi].first)}</div>
+   <div><label>Last goal scorer</label>${selectHtml(`a_last_${qi}`,AFL_PLAYERS,state.actual.q[qi].last)}</div></div>
+   <label>Most disposals</label>${selectHtml(`a_disp_${qi}`,AFL_PLAYERS,state.actual.q[qi].disposals)}
+   <button class="green" onclick="saveActualQ(${qi})">Save Actual Quarter</button>
+   <button class="primary" onclick="setScreen(${qi<3?qi+2:5})">${qi<3?"Continue to Quarter "+(qi+2):"Go to Grand Final Predictions →"}</button></div>`;
+ }
+ return html;
 }
-function lockMajorPrediction(i){
- const n=names[i];
- const norm=document.getElementById("mn"+i).value;
- const goals=document.getElementById("mg"+i).value;
- const winner=document.getElementById("mw"+i).value;
- const margin=document.getElementById("mm"+i).value;
- if(!norm||!goals||!winner||margin==="") return alert("Choose Norm Smith, Most Goals, Winner and enter a margin.");
- majorPicks[n]={norm,goals,winner,margin:Number(margin)};
- document.getElementById("mn"+i).disabled=true;
- document.getElementById("mg"+i).disabled=true;
- document.getElementById("mw"+i).disabled=true;
- document.getElementById("mm"+i).disabled=true;
- const btn=document.querySelectorAll("#majorPredictions .pick button")[i];
- btn.disabled=true;
- btn.textContent="✓ Picks locked";
+function lockQPlayer(qi,pi){
+ let f=document.getElementById(`q${qi}_${pi}_first`).value,l=document.getElementById(`q${qi}_${pi}_last`).value,d=document.getElementById(`q${qi}_${pi}_disposals`).value;
+ if(!f||!l||!d){alert("Choose all three predictions first.");return}
+ state.q[qi].picks[pi]={first:f,last:l,disposals:d};state.q[qi].locked[pi]=true;save();render()
 }
-function newQuarter(){
- order=shuffle(names);turn=0;
- document.getElementById("qtitle").textContent="Quarter "+q;
- document.getElementById("order").innerHTML=order.map((n,i)=>`<span class="pill">${i+1}. ${n}</span>`).join("");
- document.getElementById("draftArea").innerHTML="";
- picks[q]={first:{},last:{},disposals:{}};
- updateTurn();leaderboard();
+function saveActualQ(qi){
+ state.actual.q[qi]={first:document.getElementById(`a_first_${qi}`).value,last:document.getElementById(`a_last_${qi}`).value,disposals:document.getElementById(`a_disp_${qi}`).value};
+ save();render()
 }
-function updateTurn(){
- if(turn>=order.length){document.getElementById("turn").textContent="All picks complete";return}
- document.getElementById("turn").textContent=order[turn];
- let box=document.createElement("div");box.className="pick";
- box.innerHTML=`<strong>${order[turn]}'s picks</strong>
- <label>First goal</label><select id="pf"><option value="">Select player</option>${playerOptions()}</select>
- <label>Last goal</label><select id="pl"><option value="">Select player</option>${playerOptions()}</select>
- <label>Most disposals</label><select id="pd"><option value="">Select player</option>${playerOptions()}</select>
- <button onclick="savePick()">Lock ${order[turn]}'s picks</button>`;
- document.getElementById("draftArea").appendChild(box);
-}
-function savePick(){
- let n=order[turn],f=document.getElementById("pf").value,l=document.getElementById("pl").value,d=document.getElementById("pd").value;
- if(!f||!l||!d)return alert("Choose all 3 predictions.");
- picks[q].first[n]=f;picks[q].last[n]=l;picks[q].disposals[n]=d;
- turn++;updateTurn();
-}
-function fillResult(id){document.getElementById(id).innerHTML='<option value="">Select player</option>'+playerOptions()}
-["first","last","disposals","resultNorm","resultMostGoals"].forEach(fillResult);
 
-function scoreQuarter(){
- if(turn<6)return alert("Finish all six players' picks first.");
- let f=first.value,l=last.value,d=disposals.value;
- if(!f||!l||!d)return alert("Enter all quarter results.");
- names.forEach(n=>{
-   if(picks[q].first[n]===f)scores[n]++;
-   if(picks[q].last[n]===l)scores[n]++;
-   if(picks[q].disposals[n]===d)scores[n]++;
+function renderMatch(){
+ initMatch();let m=state.match,ns=names(),turn=currentTurn(m);
+ let html=`<h1>🏆 Grand Final Predictions</h1><div class="subtitle">Random draft order · duplicates allowed for Winner & Margin</div>
+ <div class="card"><div class="draft">Draft order: ${m.order.map((i,k)=>`${k+1}. ${esc(ns[i])}`).join(" → ")}</div>
+ <p class="muted">Norm Smith and Most Goals must be unique. Winner and Margin can be duplicated.</p></div>`;
+ m.order.forEach((pi,k)=>{
+   let locked=!!m.locked[pi],current=turn===pi&&!locked,p=m.picks[pi]||{};
+   html+=`<div class="card playerrow ${current?"current":""} ${locked?"locked":""}">
+   <span class="badge">${locked?"🔒 Locked":current?"👉 YOUR TURN":"⏳ Waiting"}</span><h3>${k+1}. ${esc(ns[pi])}</h3>`;
+   if(locked)html+=`<p>Norm Smith: <b>${esc(p.norm)}</b><br>Most goals: <b>${esc(p.goals)}</b><br>Winner: <b>${esc(p.winner)}</b><br>Margin: <b>${esc(p.margin)}</b></p>`;
+   else if(current){
+     let nu=matchUsed("norm",pi),gu=matchUsed("goals",pi);
+     html+=`<label>Norm Smith medalist — 3 points</label>${selectHtml(`m_${pi}_norm`,AFL_PLAYERS,p.norm)}
+     <label>Most goals — 2 points</label>${selectHtml(`m_${pi}_goals`,AFL_PLAYERS,p.goals)}
+     <label>Grand Final winner — 2 points</label>${selectHtml(`m_${pi}_winner`,TEAMS,p.winner)}
+     <label>Margin — 1 point</label>${selectHtml(`m_${pi}_margin`,MARGINS,p.margin)}
+     <button class="primary" onclick="lockMatchPlayer(${pi})">Lock ${esc(ns[pi])}'s Picks</button>
+     <p class="muted">Available Norm Smith: ${AFL_PLAYERS.length-nu.length} · Available Most Goals: ${AFL_PLAYERS.length-gu.length}</p>`;
+   } else html+=`<p class="muted">Waiting for ${esc(ns[turn])} to complete their picks.</p>`;
+   html+=`</div>`;
  });
- leaderboard();alert("Quarter "+q+" scored.");
+ if(m.order.every(i=>m.locked[i]))html+=`<div class="card"><div class="success">All Grand Final predictions are locked.</div><button class="primary" onclick="setScreen(6)">Enter Actual Results →</button></div>`;
+ return html;
+}
+function lockMatchPlayer(pi){
+ let n=document.getElementById(`m_${pi}_norm`).value,g=document.getElementById(`m_${pi}_goals`).value,w=document.getElementById(`m_${pi}_winner`).value,ma=document.getElementById(`m_${pi}_margin`).value;
+ if(!n||!g||!w||!ma){alert("Choose all four predictions first.");return}
+ if(matchUsed("norm",pi).includes(n)){alert("That Norm Smith player has already been selected.");return}
+ if(matchUsed("goals",pi).includes(g)){alert("That Most Goals player has already been selected.");return}
+ state.match.picks[pi]={norm:n,goals:g,winner:w,margin:ma};state.match.locked[pi]=true;save();render()
 }
 
-function nextQuarter(){
- if(q>=4)return alert("All four quarters are complete.");
- q++;newQuarter();
+function renderResults(){
+ let a=state.actual;
+ return `<h1>🏁 Actual Results</h1><div class="subtitle">Enter the final game data, then generate the leaderboard.</div>
+ <div class="card"><h2>Quarter Results</h2>${a.q.map((x,i)=>`<div class="actual"><h3>Quarter ${i+1}</h3>
+ <div class="row"><div><label>First goal</label>${selectHtml(`r_first_${i}`,AFL_PLAYERS,x.first)}</div>
+ <div><label>Last goal</label>${selectHtml(`r_last_${i}`,AFL_PLAYERS,x.last)}</div></div>
+ <label>Most disposals</label>${selectHtml(`r_disp_${i}`,AFL_PLAYERS,x.disposals)}</div>`).join("")}
+ <button class="green" onclick="saveResults()">Save Quarter Results</button></div>
+ <div class="card"><h2>Grand Final Results</h2>
+ <label>Norm Smith medalist — 3 points</label>${selectHtml("r_norm",AFL_PLAYERS,a.norm)}
+ <label>Most goals — 2 points</label>${selectHtml("r_goals",AFL_PLAYERS,a.goals)}
+ <label>Winner — 2 points</label>${selectHtml("r_winner",TEAMS,a.winner)}
+ <label>Margin — 1 point</label>${selectHtml("r_margin",MARGINS,a.margin)}
+ <button class="green" onclick="saveResults()">Save Actual Results</button>
+ <button class="primary" onclick="generateFinal()">🏆 Generate Final Leaderboard</button></div>
+ ${state.finalGenerated?`<div class="card"><h2>🏆 Final Leaderboard</h2>${finalBoard()}</div>`:""}`;
 }
-
-function scoreFinalPredictions(){
- if(finalScored)return alert("Grand Final predictions have already been scored.");
- const norm=document.getElementById("resultNorm").value;
- const goals=document.getElementById("resultMostGoals").value;
- const winner=document.getElementById("resultWinner").value;
- const marginRaw=document.getElementById("resultMargin").value;
- const margin=Number(marginRaw);
- if(!norm||!goals||!winner||marginRaw==="") return alert("Enter all four final results.");
-
- let locked=0;
- names.forEach(n=>{
-   if(!majorPicks[n]) return;
-   locked++;
-   if(majorPicks[n].norm===norm)scores[n]+=3;
-   if(majorPicks[n].goals===goals)scores[n]+=2;
-   if(majorPicks[n].winner===winner)scores[n]+=2;
-   if(majorPicks[n].margin===margin)scores[n]+=2;
- });
- if(locked<6)return alert("All six players must lock their Grand Final predictions first.");
- finalScored=true;
- document.getElementById("resultNorm").disabled=true;
- document.getElementById("resultMostGoals").disabled=true;
- document.getElementById("resultWinner").disabled=true;
- document.getElementById("resultMargin").disabled=true;
- document.querySelector('button[onclick="scoreFinalPredictions()"]').disabled=true;
- leaderboard();
- alert("Grand Final predictions scored.");
+function saveResults(){
+ for(let i=0;i<4;i++)state.actual.q[i]={first:document.getElementById(`r_first_${i}`).value,last:document.getElementById(`r_last_${i}`).value,disposals:document.getElementById(`r_disp_${i}`).value};
+ state.actual.norm=document.getElementById("r_norm").value;
+ state.actual.goals=document.getElementById("r_goals").value;
+ state.actual.winner=document.getElementById("r_winner").value;
+ state.actual.margin=document.getElementById("r_margin").value;
+ save();render()
 }
-
-function leaderboard(){
- let arr=names.map(n=>[n,scores[n]]).sort((a,b)=>b[1]-a[1]);
- document.getElementById("leaderboard").innerHTML="<table><tr><th>Player</th><th>Points</th></tr>"+arr.map(x=>`<tr><td>${x[0]}</td><td class="score">${x[1]}</td></tr>`).join("")+"</table>";
+function generateFinal(){saveResults();state.finalGenerated=true;save();render()}
+function finalBoard(){
+ let ns=names(),p=points(),rows=ns.map((n,i)=>({n,p:p[i],i})).sort((a,b)=>b.p-a.p||a.i-b.i);
+ return rows.map((r,k)=>{ const rank = k===0 ? "🥇" : k===1 ? "🥈" : k===2 ? "🥉" : (k+1)+"."; return `<div class="finalrank">${rank} ${esc(r.n)} <span class="score" style="float:right">${r.p} pts</span></div>`; }).join("");
 }
-function resetGame(){if(confirm("Reset the game?"))location.reload()}
+render();
 </script>
 <script>
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => navigator.serviceWorker.register("sw-v4.js"));
-}
+if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}))}
 </script>
 </body></html>
